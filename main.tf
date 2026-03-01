@@ -12,7 +12,6 @@ provider "aws" {
   region = "ap-south-1"
 }
 
-# Create a VPC
 resource "aws_vpc" "my-vpc" {
   cidr_block = "10.0.0.0/16"
   tags = {
@@ -26,7 +25,6 @@ resource "aws_subnet" "web-subnet-1" {
   cidr_block              = "10.0.1.0/24"
   availability_zone       = "ap-south-1a"
   map_public_ip_on_launch = true
-
   tags = {
     Name = "Web-1a"
   }
@@ -37,11 +35,10 @@ resource "aws_subnet" "web-subnet-2" {
   cidr_block              = "10.0.2.0/24"
   availability_zone       = "ap-south-1b"
   map_public_ip_on_launch = true
- tags = {
-    Name = "Web-lb"
+  tags = {
+    Name = "web-1b"
   }
 }
-
 
 
 # Create Application Private Subnet
@@ -50,19 +47,17 @@ resource "aws_subnet" "application-subnet-1" {
   cidr_block              = "10.0.11.0/24"
   availability_zone       = "ap-south-1a"
   map_public_ip_on_launch = false
-
   tags = {
-    Name = "Application-1a"
+    Name = "application-1a"
   }
 }
 
 resource "aws_subnet" "application-subnet-2" {
-  vpc_id                  = aws_vpc.my-vpc.id
-  cidr_block              = "10.0.12.0/24"
-  availability_zone       = "ap-south-1b"
-
+  vpc_id            = aws_vpc.my-vpc.id
+  cidr_block        = "10.0.12.0/24"
+  availability_zone = "ap-south-1b"
   tags = {
-    Name = "Application-lb"
+    Name = "Application-1b"
   }
 }
 
@@ -71,7 +66,6 @@ resource "aws_subnet" "database-subnet-1" {
   vpc_id            = aws_vpc.my-vpc.id
   cidr_block        = "10.0.21.0/24"
   availability_zone = "ap-south-1a"
-
   tags = {
     Name = "Database-1a"
   }
@@ -81,9 +75,8 @@ resource "aws_subnet" "database-subnet-2" {
   vpc_id            = aws_vpc.my-vpc.id
   cidr_block        = "10.0.22.0/24"
   availability_zone = "ap-south-1b"
-
   tags = {
-    Name = "Database-lb"
+    Name = "Database-1b"
   }
 }
 
@@ -91,7 +84,6 @@ resource "aws_subnet" "database-subnet" {
   vpc_id            = aws_vpc.my-vpc.id
   cidr_block        = "10.0.3.0/24"
   availability_zone = "ap-south-1a"
-
   tags = {
     Name = "Database"
   }
@@ -100,7 +92,6 @@ resource "aws_subnet" "database-subnet" {
 # Create Internet Gateway
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.my-vpc.id
-
   tags = {
     Name = "Terra-IGW"
   }
@@ -109,15 +100,12 @@ resource "aws_internet_gateway" "igw" {
 # Create Web layer route table
 resource "aws_route_table" "web-rt" {
   vpc_id = aws_vpc.my-vpc.id
-
-
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.igw.id
   }
-
   tags = {
-    Name = "WebRT"
+    Name = "Web RT"
   }
 }
 
@@ -125,6 +113,7 @@ resource "aws_route_table" "web-rt" {
 resource "aws_route_table_association" "a" {
   subnet_id      = aws_subnet.web-subnet-1.id
   route_table_id = aws_route_table.web-rt.id
+
 }
 
 resource "aws_route_table_association" "b" {
@@ -134,168 +123,153 @@ resource "aws_route_table_association" "b" {
 
 #Create EC2 Instance
 resource "aws_instance" "webserver1" {
-  ami                    = "ami-0492447090ced6eb5"
-  instance_type          = "t2.micro"
+  ami                    = "ami-051a31ab2f4d498f5"
+  instance_type          = "t3.micro"
   availability_zone      = "ap-south-1a"
-  key_name               = "MyKey"
+  key_name               = "mykey"
   vpc_security_group_ids = [aws_security_group.webserver-sg.id]
   subnet_id              = aws_subnet.web-subnet-1.id
-  user_data              = "${file("apache.sh")}"
-
+  user_data              = file("apache.sh")
   tags = {
-    Name = "Web Server-1"
+    Name = "Web-server-1"
   }
+
 }
 
 resource "aws_instance" "webserver2" {
-  ami                    = "ami-0492447090ced6eb5"
-  instance_type          = "t2.micro"
+  ami                    = "ami-051a31ab2f4d498f5"
+  instance_type          = "t3.micro"
   availability_zone      = "ap-south-1b"
-  key_name               = "MyKey"
+  key_name               = "mykey"
   vpc_security_group_ids = [aws_security_group.webserver-sg.id]
   subnet_id              = aws_subnet.web-subnet-2.id
-  user_data              = "${file("apache.sh")}"
-
+  user_data              = file("apache.sh")
   tags = {
-    Name = "Web Server-2"
+    Name = "Web-server-2"
   }
 }
 
 #Create EC2 Instance
 resource "aws_instance" "appserver1" {
-  ami                    = "ami-0492447090ced6eb5"
-  instance_type          = "t2.micro"
+  ami                    = "ami-051a31ab2f4d498f5"
+  instance_type          = "t3.micro"
   availability_zone      = "ap-south-1a"
-  key_name               = "MyKey"
+  key_name               = "mykey"
   vpc_security_group_ids = [aws_security_group.appserver-sg.id]
   subnet_id              = aws_subnet.application-subnet-1.id
   tags = {
-    Name = "app Server-1"
+    Name = "App-Server1"
   }
 }
 
 resource "aws_instance" "appserver2" {
-  ami                    = "ami-0492447090ced6eb5"
-  instance_type          = "t2.micro"
+  ami                    = "ami-051a31ab2f4d498f5"
+  instance_type          = "t3.micro"
   availability_zone      = "ap-south-1b"
-  key_name               = "MyKey"
+  key_name               = "mykey"
   vpc_security_group_ids = [aws_security_group.appserver-sg.id]
   subnet_id              = aws_subnet.application-subnet-2.id
-
   tags = {
-    Name = "app Server-2"
+    Name = "App-Server-2"
   }
 }
 
 resource "aws_db_instance" "default" {
-  allocated_storage    = 10
-  db_name              = "mydb"
-  engine               = "mysql"
-  engine_version       = "8.0.41"
-  instance_class       = "db.t3.micro"
-  username             = "admin"
-  password             = "Root123456"
-  skip_final_snapshot  = true
+  allocated_storage   = 10
+  db_name             = "mydb"
+  engine              = "mysql"
+  engine_version      = "8.4.6"
+  instance_class      = "db.t3.micro"
+  username            = "admin"
+  password            = "Root123456"
+  skip_final_snapshot = true
 }
 
 resource "aws_db_subnet_group" "default" {
   name       = "main"
   subnet_ids = [aws_subnet.database-subnet-1.id, aws_subnet.database-subnet-2.id]
-
   tags = {
     Name = "My DB subnet group"
   }
 }
 
-
 # Create Web Security Group
 resource "aws_security_group" "webserver-sg" {
   name        = "webserver-sg"
-  description = "Allow HTTP inbound traffic"
+  description = "Allo SSH inbound traffic"
   vpc_id      = aws_vpc.my-vpc.id
 
   ingress {
-    description = "HTTP from VPC"
+    description = "ssh from vpc"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
   ingress {
-    description = "HTTP from VPC"
+    description = "HTTP from vpc"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
- tags = {
+  tags = {
     Name = "Web-SG"
   }
 }
 
 # Create Application Security Group
 resource "aws_security_group" "appserver-sg" {
-  name        = "appserver-SG"
+  name        = "appserver-sg"
   description = "Allow inbound traffic from ALB"
   vpc_id      = aws_vpc.my-vpc.id
-
   ingress {
-    description     = "Allow traffic from web layer"
-    from_port       = 8080
-    to_port         = 8080
-    protocol        = "tcp"
+    description = "Allow traffic from web layer"
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
- ingress {
-    description     = "Allow traffic from web layer"
-    from_port       = 22
-    to_port         = 22
-    protocol        = "tcp"
+  ingress {
+    description = "Allow traffic from web layer"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
   tags = {
-    Name = "appserver-SG"
+    Name = "Appserver-SG"
   }
 }
 
 # Create Database Security Group
 resource "aws_security_group" "database-sg" {
-  name        = "Database-SG"
-  description = "Allow inbound traffic from application layer"
-  vpc_id      = aws_vpc.my-vpc.id
-
+  name   = "database-sg"
+  vpc_id = aws_vpc.my-vpc.id
   ingress {
-    description     = "Allow traffic from application layer"
-    from_port       = 3306
-    to_port         = 3306
-    protocol        = "tcp"
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
   egress {
     from_port   = 32768
     to_port     = 65535
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
   tags = {
     Name = "Database-SG"
   }
@@ -307,6 +281,7 @@ resource "aws_lb" "external-elb" {
   load_balancer_type = "application"
   security_groups    = [aws_security_group.webserver-sg.id]
   subnets            = [aws_subnet.web-subnet-1.id, aws_subnet.web-subnet-2.id]
+
 }
 
 resource "aws_lb_target_group" "external-elb" {
@@ -320,17 +295,14 @@ resource "aws_lb_target_group_attachment" "external-elb1" {
   target_group_arn = aws_lb_target_group.external-elb.arn
   target_id        = aws_instance.webserver1.id
   port             = 80
-
   depends_on = [
     aws_instance.webserver1,
   ]
 }
-
 resource "aws_lb_target_group_attachment" "external-elb2" {
   target_group_arn = aws_lb_target_group.external-elb.arn
   target_id        = aws_instance.webserver2.id
   port             = 80
-
   depends_on = [
     aws_instance.webserver2,
   ]
@@ -338,44 +310,39 @@ resource "aws_lb_target_group_attachment" "external-elb2" {
 
 resource "aws_lb_listener" "external-elb" {
   load_balancer_arn = aws_lb.external-elb.arn
-  port              = "80"
-  protocol          = "HTTP"
-
+  port             = 80
+  protocol         = "HTTP"
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.external-elb.arn
   }
 }
 
-
-
-
 output "lb_dns_name" {
-  description = "The DNS name of the load balancer"
+  description = "The DNS name of load balancer"
   value       = aws_lb.external-elb.dns_name
+
 }
 
-
 resource "aws_s3_bucket" "example" {
-  bucket = "reyaz-devopsproject-bkt-123"
-
+  bucket = "ramana-devopsproject-bkt-123"
   tags = {
-    Name        = "reyaz-devopsproject-bkt-123"
+    Name        = "ramana-devopsproject-bkt-123"
     Environment = "Dev"
   }
 }
-
 resource "aws_iam_user" "one" {
-for_each = var.iam_users
-name = each.value
+  for_each = var.iam-users
+  name     = each.value
 }
 
-variable "iam_users" {
-description = ""
-type = set(string)
-default = ["userone", "usertwo", "userthree", "userfour"]
+variable "iam-users" {
+  description = " "
+  type       = set(string)
+  default    = ["userone", "usertwo", "userthree", "userfour"]
 }
 
 resource "aws_iam_group" "two" {
-name = "DevOpsGrp"
+  name = "DevOpsGrp"
 }
+
